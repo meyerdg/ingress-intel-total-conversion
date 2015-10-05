@@ -26,14 +26,16 @@
 window.plugin.hitlist = function() {};
 window.plugin.hitlist.portals = []; // list of top n AP gain portals
 /* TODO Make MAX_PORTALS configurable from the GUI? */
-window.plugin.histlist.MAX_PORTALS=60;
+window.plugin.hitlist.MAX_PORTALS=10;
 window.plugin.hitlist.sortBy = 1; // second column: level
 window.plugin.hitlist.sortOrder = -1;
 window.plugin.hitlist.enlP = 0;
 window.plugin.hitlist.resP = 0;
 window.plugin.hitlist.neuP = 0;
 window.plugin.hitlist.filter = 0;
+window.plugin.hitlist.msg = '';
 
+/*
 window.plugin.hitlist.fields = [
   {
     title: "Portal Name",
@@ -132,14 +134,29 @@ window.plugin.hitlist.fields = [
     defaultOrder: -1,
   },
 ];
+*/
+
+window.plugin.hitlist.download = function() {
+  var filename = "hitlist.csv";
+  var dnldelement = document.createElement('a');
+  dnldelement.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(window.plugin.hitlist.msg));
+  dnldelement.setAttribute('download', filename);
+
+  dnldelement.style.display = 'none';
+  document.body.appendChild(dnldelement);
+
+  dnldelement.click();
+
+  document.body.removeChild(dnldelement);
+}
 
 window.plugin.hitlist.portalAdded = function(data) {
    data.portal.on('add', function() {
-      plugin.hitlist.getInfo(this.options);
+      window.plugin.hitlist.getInfo(this.options);
    }); 
 }
 
-window.plugin.hitlist.getInfo = function (portal) {
+window.plugin.hitlist.getInfo = function(portal) {
    var apobj = window.getPortalApGain(portal.guid);
    /* TODO Configurable which team to save into the hitlist [before any release] */
    if (apobj.enemyAp && portal.data.team == 'R') {
@@ -160,56 +177,60 @@ window.plugin.hitlist.getInfo = function (portal) {
       pd.coord = window.findPortalLatLng(portal.guid);
       pd.plink = '/intel?ll='+pd.coord.lat+','+pd.coord.lng+'&z=17&pll='+pd.coord.lat+','+pd.coord.lng;
       console.log('HITLIST: portal info snarfed');
-window.plugin.hitlist.portals = []; // list of top n AP gain portals
+// window.plugin.hitlist.portals = []; // list of top n AP gain portals
+      console.log('HITLIST: portal list length: ' + window.plugin.hitlist.portals.length);
       if (window.plugin.hitlist.portals.length > 1) {
-         if (ap > plist[plist.length - 1].ap) {
-            window.plist.push(pd);
+         if (ap > window.plugin.hitlist.portals[window.plugin.hitlist.portals.length - 1].ap) {
+            window.plugin.hitlist.portals.push(pd);
          }
          var sortlist;
-         sortlist = window.plist.sort(function(a,b){
+         sortlist = window.plugin.hitlist.portals.sort(function(a,b){
             var valA = a.ap;
             var valB = b.ap;
             return valA < valB ? 1 : valA > valB ? -1 : 0;
          });
-         sortlist = sortlist.splice(0,window.HITLIST_MAX_PORTALS); 
-         window.plist = sortlist;
+         sortlist = sortlist.splice(0,window.plugin.hitlist.MAX_PORTALS); 
+         window.plugin.hitlist.portals = sortlist;
       } else {
-         window.plist.push(pd); // first value, nothing else to compare with...
+         window.plugin.hitlist.portals.push(pd); // first value, nothing else to compare with...
       }
    }
 }
 
 window.plugin.hitlist.showlist = function() {
-   console.log('HITLIST: list length ' + window.plist.length);
+   console.log('HITLIST: list length ' + window.plugin.hitlist.portals.length);
    //var msg = "Guid " + pd.guid + "\nLevel " + pd.level + "\nTeam " + pd.team + "\nLatLng" + pd.lat + "," + pd.lng + "\n<a href='" + pd.plink + "'>Permalink</a>";
    var msg = "guid,level,team,lat,lng,img,rescnt,name,health,apgain,linkcnt,fieldcnt,permalink\n";
    var cp;
-   window.plist.sort(function(a,b){
+   window.plugin.hitlist.portals.sort(function(a,b){
       var valA = a.ap;
       var valB = b.ap;
       return valA < valB ? 1 : valA > valB ? -1 : 0;
    });
-   for(i=0; i<window.plist.length; i++) {
+   for(i=0; i<window.plugin.hitlist.portals.length; i++) {
       msg = msg + 
-            window.plist[i].guid + "," + 
-            window.plist[i].level + "," + 
-            window.plist[i].team + "," + 
-            window.plist[i].lat + "," + 
-            window.plist[i].lng + ",'" + 
-            window.plist[i].img + "'," + 
-            window.plist[i].res + "," + 
-            window.plist[i].name + "," + 
-            window.plist[i].hp + "," + 
-            window.plist[i].ap + "," + 
-            window.plist[i].lcount + "," + 
-            window.plist[i].fcount + ",'https://ingress.com" + 
-            window.plist[i].plink + "'\n";
+            window.plugin.hitlist.portals[i].guid + "," + 
+            window.plugin.hitlist.portals[i].level + "," + 
+            window.plugin.hitlist.portals[i].team + "," + 
+            window.plugin.hitlist.portals[i].lat + "," + 
+            window.plugin.hitlist.portals[i].lng + ",\"" + 
+            window.plugin.hitlist.portals[i].img + "\"," + 
+            window.plugin.hitlist.portals[i].res + ",\"" + 
+            window.plugin.hitlist.portals[i].name + "\"," + 
+            window.plugin.hitlist.portals[i].hp + "," + 
+            window.plugin.hitlist.portals[i].ap + "," + 
+            window.plugin.hitlist.portals[i].lcount + "," + 
+            window.plugin.hitlist.portals[i].fcount + ",\"https://ingress.com" + 
+            window.plugin.hitlist.portals[i].plink + "\"\n";
    }
+   window.plugin.hitlist.msg = msg;
+   msg = msg + '<a onclick="window.plugin.hitlist.download(); return false;">Download in CSV format</a>';
    alert(msg);
 }
 
 var setup = function() {
-   $('#toolbox').append('<a onclick="window.plugin.hitlist.showlist(); return false;" title="[k]" accesskey="k">Hit List</a>');
+    $('#toolbox').append('<a onclick="window.plugin.hitlist.showlist(); return false;" title="[k]" accesskey="k">Hit List</a>');
+  // $('#toolbox').append('<a onclick="window.plugin.hitlist.download(); return false;" title="[k]" accesskey="k">Hit List</a>');
 
    window.addHook('portalAdded', window.plugin.hitlist.portalAdded);
 }
