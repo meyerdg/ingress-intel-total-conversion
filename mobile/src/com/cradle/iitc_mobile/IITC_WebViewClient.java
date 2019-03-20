@@ -35,10 +35,9 @@ public class IITC_WebViewClient extends WebViewClient {
 
     public static final boolean isIntelUrl(String url) {
         return
-            url.startsWith("http://www.ingress.com/intel") ||
-            url.startsWith("https://www.ingress.com/intel") ||
-            url.startsWith("http://www.ingress.com/mission/") ||
-            url.startsWith("https://www.ingress.com/mission/");
+            url.startsWith("https://intel.ingress.com") ||
+            url.matches("^https?://(?:intel\\.)?ingress\\.com/intel.*") ||
+            url.matches("^https?://(?:intel\\.)?ingress\\.com/mission.*");
     }
 
     private final IITC_Mobile mIitc;
@@ -232,9 +231,15 @@ public class IITC_WebViewClient extends WebViewClient {
     // start non-ingress-intel-urls in another app...
     @Override
     public boolean shouldOverrideUrlLoading(final WebView view, final String url) {
+        Uri uri = Uri.parse(url);
+        
         if (url.contains("conflogin") || url.contains("ServiceLogin") || url.contains("appengine.google.com")) {
             Log.d("Google login");
             return false;
+        }
+        else if (uri.getHost().contains(".google.") && "/url".equals(uri.getPath()) && uri.getQueryParameter("q") != null) {
+            Log.d("redirect to: " + uri.getQueryParameter("q"));
+            return shouldOverrideUrlLoading(view, uri.getQueryParameter("q"));
         }
         else if (isIntelUrl(url)) {
             Log.d("intel link requested, reset app and load " + url);

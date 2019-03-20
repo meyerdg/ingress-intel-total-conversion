@@ -63,7 +63,7 @@ import java.util.regex.Pattern;
 
 public class IITC_Mobile extends Activity
         implements OnSharedPreferenceChangeListener, NfcAdapter.CreateNdefMessageCallback, OnItemLongClickListener {
-    private static final String mIntelUrl = "https://www.ingress.com/intel";
+    private static final String mIntelUrl = "https://intel.ingress.com/intel";
 
     private SharedPreferences mSharedPrefs;
     private IITC_FileManager mFileManager;
@@ -116,6 +116,16 @@ public class IITC_Mobile extends Activity
         mViewDebug = findViewById(R.id.viewDebug);
         mBtnToggleMap = (ImageButton) findViewById(R.id.btnToggleMapVisibility);
         mEditCommand = (EditText) findViewById(R.id.editCommand);
+        mEditCommand.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(final View v, final int keyCode, final KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event.isCtrlPressed()) {
+                    onBtnRunCodeClick(v);
+                    return true;
+                }
+                return false;
+            }
+        });
         mEditCommand.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(final TextView v, final int actionId, final KeyEvent event) {
